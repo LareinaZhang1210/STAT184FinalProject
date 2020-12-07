@@ -1,0 +1,12 @@
+---
+title: " Covid-19 in Philadelphia "
+author: "Menghan Zhang"
+date: "Dec 8th 2020"
+output: 
+  html_document:
+    toc: yes
+---
+
+### Purpose of analysis
+
+Covid-19 still has a serious impact in the world. Explore the cases and death caused by it in Philadelphia, analyze its trends and give advice on prevention.
