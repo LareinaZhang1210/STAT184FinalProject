@@ -9,4 +9,197 @@ output:
 
 ### Purpose of analysis
 
-Covid-19 still has a serious impact in the world. Explore the cases and death caused by it in Philadelphia, analyze its trends and give advice on prevention.
+Covid-19 still has a serious impact throughout the world. I am planning to explore the cases and death caused by it in Philadelphia, analyzing its trends and give some suggestions on prevention.
+
+### Data description
+
+#### Data come from：Pennsylvania department of health 
+
+<https://data.pa.gov/Health/COVID-19-Aggregate-Cases-Current-Daily-County-Heal/j72v-r42c>
+
+<https://data.pa.gov/Health/COVID-19-Aggregate-Death-Data-Current-Daily-County/fbgu-sqgp>
+
+#### Data Provided by ：Pennsylvania Department of Health
+
+#### Dataset Owner ：Jere Matthews
+
+#### Date Created：October 8, 2020
+
+#### Data Last Updated：November 22, 2020
+
+### Data access
+
+```{r}
+#Two different data sources imported：
+Case <- read.csv ( "COVID-19_Aggregate_Cases_Current_Daily_County_Health.csv", header=TRUE, sep=",")
+
+Death <- read.csv ( "COVID-19_Aggregate_Death_Data_Current_Daily_County_Health.csv", header=TRUE, sep=",")
+```
+
+```{r}
+#Inspecting Data Intake
+names(Case)
+str(Case)
+```
+
+Case Data has 9 variables and 18088 cases.
+
+Each case represents the number of people infected with covid-19 in various parts of Pennsylvania each day.
+
+```{r}
+names(Death) 
+str(Death) 
+```
+
+Death Data has 9 variables and 18088 cases.
+
+Each case represents the number of people who die of covid-19 in various parts of Pennsylvania each day.
+
+After getting the information, it is found that some sells is NA . 
+
+After viewing the csv source file, it is found that there is no data in this cell, and there is no problem in importing the data.
+
+### Data wrangling
+
+```{r}
+library(dplyr) 
+library(ggplot2) 
+```
+
+```{r}
+#General data wrangling
+#Select variables and observations and sort them by time.
+Philadelphia_case <- filter ( Case , Jurisdiction  == "Philadelphia" )
+Philadelphia_death <- filter ( Death , County.Name  == "Philadelphia" )
+#A spread or gather operation (or equivalent):
+Ph_case <- select ( arrange ( Philadelphia_case , Date ) , 1:3 , 5:6 )
+Ph_death <- select ( arrange ( Philadelphia_death , Date.of.Death ), 1:3 , 5:6 )
+```
+
+```{r}
+#View selection and sorting.
+head(Ph_case)
+head(Ph_death)
+```
+
+The selection of variables and sorting are normal.
+
+```{r}
+#Join operation
+names ( Ph_death )[ 2 ] <- "Date" 
+case_death <- Ph_case %>% full_join ( Ph_death, by = "Date" )
+case_death <- select( case_death , 1:4 , 7:8 , 5 , -6 )
+```
+
+```{r}
+#Check the merger
+head(case_death)
+```
+
+The merger is in good shape.
+
+```{r}
+#Reduction and/or transformation functions:
+sum ( case_death [,3] )
+max ( case_death [,3] )
+case_death$Date [ grep ( max ( case_death [,3] ) , case_death$New.Cases ) ]
+```
+
+The largest number of new cases in a single day is 1153, and the cumulative number of patients is 54932. The largest number of new cases so far is on "11/12/2020", which shows that the  infection is still serious.
+
+```{r}
+sum(case_death [,5], na.rm=TRUE)
+max(case_death [,5], na.rm=TRUE)
+case_death$Date [grep(max(case_death [,5], na.rm=TRUE), case_death$New.Deaths)]
+```
+
+The largest number of new deaths in a single day is 61, and the cumulative number of patients is 1979.The largest number of new deaths so far is on "04/17/2020", which shows that the death of patients has been alleviated.
+
+### Data visualization
+
+```{r}
+#Line graph of cumulative cases/deaths
+ggplot(case_death) +
+geom_line(aes(x = case_death[,2], y = case_death[,4]), group = 1, size = 1.5, color="red") +
+geom_line(aes(x = case_death[,2], y = case_death[,6]), group = 1, size = 1.5, color="green") +
+theme(axis.ticks = element_blank(), axis.text.x = element_blank()) + 
+labs ( x = "Date" , y = "Cumulative.cases/Cumulative.deaths" )
+```
+
+It can be seen from the graph that the cumulative number of cases rose rapidly in the initial stage, slowed down in the intermediate stage, and recently increased rapidly. The cumulative deaths are relatively gentle, with little fluctuations.
+
+```{r}
+#Scatter plot of New.Cases
+ggplot ( data = case_death , aes ( x = Date , y =  New.Cases ) ) +  
+geom_point ( color = "darkred" ) +
+theme ( axis.ticks = element_blank () , axis.text.x  = element_blank () )
+```
+
+It can be seen from the scatter plot of New.Cases that the number of new cases increased rapidly in the early stage, declined with slight fluctuations in the middle stage, and increased rapidly recently.This is consistent with the information obtained from the cumulative graph.
+
+```{r}
+#Scatter plot of New.Deaths
+ggplot ( data = case_death, aes ( x = Date, y = New.Deaths ) ) +  
+geom_point ( aes ( colour = New.Deaths ) ) +
+theme ( axis.ticks = element_blank () , axis.text.x  = element_blank () )
+```
+
+From the scatter plot of New Deaths, it can be seen that the trend of new deaths in the early period is basically consistent with the trend of new cases, but there is a certain lag, and the mid-term and recently have fluctuated at extremely low standards.
+
+```{r}
+# Constructed a function to find the date of the possible drop point in the graph.
+casedate <- function(a) {
+    c <- mean ( as.numeric ( case_death [11:a,3] ) )
+    for ( i in 11:a ) {
+        if ( case_death [i,3] > c) {
+            if ( case_death [i+1,3] < c ) {
+              print ( case_death [i,2] )
+            }
+        }
+    }
+}
+
+casedate (265)
+```
+
+Combining the obtained date with the scatter plot, it can be known that from 4/25 to 5/9, the number of new cases per day is indeed declining, and from 7/14 to 10/19, the number of new cases per day has been fluctuating.
+
+```{r}
+deathdate <- function(b) {
+    d <- mean ( as.numeric ( case_death [23:b,5] ) )
+    for ( i in 23:b ) {
+        if ( case_death [i,5] > d ) {
+          if ( case_death [i+1,5] < d ) {
+            print ( case_death [i,2] )
+          }
+        }
+    }
+}
+
+deathdate (265)
+```
+
+From the date combined with the scatter plot, to 6/12, the new deaths have been controlled and maintained at a low level.
+
+```{r}
+#Density plot of New.cases
+ggplot ( data = case_death , aes ( x = New.Cases ) ) + 
+geom_density ( color = "#619CFF" , fill =  "#00B0F6" , alpha = 100 )
+```
+
+It can be seen from the density map that the number of new cases per day is less than 300 in most cases, but there are also cases where the number of patients is nearly 1200.
+
+```{r}
+#Density plot of New.deaths
+ggplot ( data = case_death , aes ( x = New.Deaths ) ) +
+geom_density ( color = "#F8766D" , fill =  "#F8766D" , alpha = 100 )
+```
+
+According to the density map, the number of new deaths per day is mostly within 10, and in most cases within 40.
+
+### Analysis conclusion
+
+The number of cases and deaths in Philadelphia increased rapidly in the early stages, which is inevitable. With the improvement of protection awareness and the enrichment of treatment methods, these have all declined in the mid-term. However, the number of cases has been increasing recently, and more rapidly, this may be because people vote and participate in rallies without protection. Fortunately, medical treatment limits the increase in death.
+
+It is recommended that we still do daily protection, such as wearing a mask, washing your hands frequently, and spraying more disinfectant to maintain our own health and safety in various ways.
+
