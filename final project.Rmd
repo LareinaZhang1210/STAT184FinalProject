@@ -1,9 +1,9 @@
 ---
-title: " Covid-19 in Philadelphia "
+title: ' Covid-19 in Philadelphia '
 author: "Menghan Zhang"
 date: "Dec 8th 2020"
-output: 
-  html_document:
+output:
+  html_notebook:
     toc: yes
 ---
 
@@ -86,8 +86,8 @@ The selection of variables and sorting are normal.
 
 ```{r}
 #Join operation
-names ( Ph_death )[ 2 ] <- "Date" 
-case_death <- Ph_case %>% full_join ( Ph_death, by = "Date" )
+names (Ph_death)[ 2 ] <- "Date" 
+case_death <- Ph_case %>% full_join (Ph_death, by = "Date")
 case_death <- select( case_death , 1:4 , 7:8 , 5 , -6 )
 ```
 
@@ -100,9 +100,9 @@ The merger is in good shape.
 
 ```{r}
 #Reduction and/or transformation functions:
-sum ( case_death [,3] )
-max ( case_death [,3] )
-case_death$Date [ grep ( max ( case_death [,3] ) , case_death$New.Cases ) ]
+sum(case_death [,3])
+max(case_death [,3])
+case_death$Date[grep(max(case_death [,3]), case_death$New.Cases)]
 ```
 
 The largest number of new cases in a single day is 1153, and the cumulative number of patients is 54932. The largest number of new cases so far is on "11/12/2020", which shows that the  infection is still serious.
@@ -117,7 +117,7 @@ The largest number of new deaths in a single day is 61, and the cumulative numbe
 
 ### Data visualization
 
-```{r}
+```{r,warning=FALSE,message=FALSE}
 #Line graph of cumulative cases/deaths
 ggplot(case_death) +
 geom_line(aes(x = case_death[,2], y = case_death[,4]), group = 1, size = 1.5, color="red") +
@@ -137,7 +137,7 @@ theme ( axis.ticks = element_blank () , axis.text.x  = element_blank () )
 
 It can be seen from the scatter plot of New.Cases that the number of new cases increased rapidly in the early stage, declined with slight fluctuations in the middle stage, and increased rapidly recently.This is consistent with the information obtained from the cumulative graph.
 
-```{r}
+```{r,warning=FALSE,message=FALSE}
 #Scatter plot of New.Deaths
 ggplot ( data = case_death, aes ( x = Date, y = New.Deaths ) ) +  
 geom_point ( aes ( colour = New.Deaths ) ) +
@@ -184,15 +184,15 @@ From the date combined with the scatter plot, to 6/12, the new deaths have been 
 ```{r}
 #Density plot of New.cases
 ggplot ( data = case_death , aes ( x = New.Cases ) ) + 
-geom_density ( color = "#619CFF" , fill =  "#00B0F6" , alpha = 100 )
+geom_density ( color = "red" , fill =  "blue" , alpha = 100 )
 ```
 
 It can be seen from the density map that the number of new cases per day is less than 300 in most cases, but there are also cases where the number of patients is nearly 1200.
 
-```{r}
+```{r,warning=FALSE,message=FALSE}
 #Density plot of New.deaths
 ggplot ( data = case_death , aes ( x = New.Deaths ) ) +
-geom_density ( color = "#F8766D" , fill =  "#F8766D" , alpha = 100 )
+geom_density ( color = "red" , fill =  "green" , alpha = 100 )
 ```
 
 According to the density map, the number of new deaths per day is mostly within 10, and in most cases within 40.
